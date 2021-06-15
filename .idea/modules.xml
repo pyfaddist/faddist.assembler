@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/rxpy-assembler.iml" filepath="$PROJECT_DIR$/.idea/rxpy-assembler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/faddist.assembler.iml" filepath="$PROJECT_DIR$/.idea/faddist.assembler.iml" />
     </modules>
   </component>
 </project>
