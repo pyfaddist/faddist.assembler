@@ -1,4 +1,5 @@
 import json
+import os
 from abc import abstractmethod
 from collections import Iterator, Iterable
 from logging import Logger
@@ -62,7 +63,8 @@ class InitializingObserver(Observer):
 
 
 class Assembler(object):
-    def __init__(self):
+    def __init__(self, working_dir: str = os.path.abspath(os.getcwd())):
+        self.__working_dir = working_dir
         self.__named_classes = {}
         self.__variables = {}
 
@@ -126,7 +128,17 @@ class Assembler(object):
                 name = descriptor['name']
                 self.__variables[name] = self.__instance_from_descriptor(descriptor)
 
+    def __bootstrap_include(self, path: str):
+        if os.path.isabs(path):
+            include_path = path
+        else:
+            include_path = os.path.join(self.__working_dir, path)
+        with open(include_path, 'r') as fd:
+            self.bootstrap(json.load(fd))
+
     def bootstrap(self, definitions: dict):
+        if 'include' in definitions:
+            self.__bootstrap_include(definitions['include'])
         if 'alias' in definitions:
             self.__bootstrap_alias(definitions['alias'])
         if 'variables' in definitions:
