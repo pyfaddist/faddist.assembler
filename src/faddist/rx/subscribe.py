@@ -5,8 +5,7 @@ from rx.core.typing import Observer
 from rx.scheduler.scheduler import Scheduler
 
 
-# noinspection PyPep8Naming
-class subscribe(object):
+class SubscribeDecorator(object):
     def __init__(self, origin_function):
         self.__origin_function = origin_function
         self.__observable: Observable = None

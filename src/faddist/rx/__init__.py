@@ -2,4 +2,5 @@ __all__ = [
     'subscribe'
 ]
 
-from .subscribe import subscribe
+# noinspection PyPep8Naming
+from .subscribe import SubscribeDecorator as subscribe
