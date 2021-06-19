@@ -54,7 +54,9 @@ def test_rx_transform():
     assembler = Assembler()
 
     pipeline = assembler.build_pipeline({'alias': [{'__type__': 'datetime.date', 'name': 'Date'},
-                                                   {'__type__': 'datetime.datetime', 'name': 'DateTime'}],
+                                                   {'__type__': 'datetime.datetime', 'name': 'DateTime'},
+                                                   {'__type__': 'faddist.rx.operators.TransformBuilder',
+                                                    'name': 'transform'}],
                                          'variables': [{'__type__': 'list', 'name': 'test'},
                                                        {'__type__': 'int', 'name': 'start', 'arguments': '10'},
                                                        {'__type__': 'int', 'name': 'stop', 'arguments': '20'}],
@@ -62,7 +64,7 @@ def test_rx_transform():
                                          'pipe': [
                                              {'__type__': 'rx.operators.map',
                                               'arguments': ['$lambda x: {"a": "2021-05-" + str(x), "x": x}']},
-                                             {'__type__': 'faddist.rx.operators.TransformBuilder',
+                                             {'__alias__': 'transform',
                                               'arguments': [{
                                                   'origin': 'x',
                                                   'date': '$lambda x: DateTime.strptime(x["a"], "%Y-%m-%d").date()'
