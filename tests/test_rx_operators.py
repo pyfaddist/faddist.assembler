@@ -76,8 +76,15 @@ def test_rx_transform():
 
     data = assembler.get_variable('test')
     assert len(data) == 10
+
     entry = data[0]
     assert 'date' in entry
     assert entry['date'] == datetime.date(2021, 5, 10)
     assert 'origin' in entry
     assert entry['origin'] == 10
+
+    entry = data[9]
+    assert 'date' in entry
+    assert entry['date'] == datetime.date(2021, 5, 19)
+    assert 'origin' in entry
+    assert entry['origin'] == 19
