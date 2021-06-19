@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import traceback
 from abc import abstractmethod, ABC
@@ -6,7 +7,7 @@ from collections import Iterator, Iterable
 from logging import Logger
 from typing import Union, Any, Callable
 
-from rx import Observable, from_, catch
+from rx import Observable, from_
 from rx.core.abc import Observer
 
 from faddist.reflection import load_class, create_instance
@@ -34,6 +35,7 @@ class Pipeline(object):
     def operate(self, callable_: Callable[[Any], Any] = None):
         def on_error(error):
             traceback.print_exc()
+
         observable: Observable = from_(self.__iterator).pipe(*self.__ducts)
         if isinstance(self.__observer, InitializingObserver):
             self.__observer.initialize(self)
@@ -97,7 +99,17 @@ class Assembler(object):
         scope = {}
         scope.update(self.__variables)
         scope.update(self.__named_classes)
-        return eval(value[1:], scope)
+        compiled = eval(value[1:], scope)
+
+        def isolation(data: Any) -> Any:
+            try:
+                return compiled(data)
+            except:
+                logging.critical(f"Failed executing lamda function '{value}' with input data {repr(data)}.",
+                                 exc_info=True)
+                raise
+
+        return isolation
 
     def __bootstrap_alias(self, definitions: list[dict]):
         if isinstance(definitions, (Iterable, Iterator, list, tuple)):
