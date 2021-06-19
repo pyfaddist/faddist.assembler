@@ -1,4 +1,5 @@
 import datetime
+from typing import Callable, Any
 
 from rx import from_
 
@@ -50,13 +51,27 @@ def test_buffer_while():
     source.subscribe(assert_subscription)
 
 
+def sample_transform_callable(source: str, formats: list[str], default: Any = None) -> Callable[[Any], Any]:
+    def convert(data: Any):
+        for format_ in formats:
+            try:
+                return datetime.datetime.strptime(data.get(source), format_).date()
+            except ValueError:
+                pass
+        return default
+
+    return convert
+
+
 def test_rx_transform():
     assembler = Assembler()
 
     pipeline = assembler.build_pipeline({'alias': [{'__type__': 'datetime.date', 'name': 'Date'},
                                                    {'__type__': 'datetime.datetime', 'name': 'DateTime'},
                                                    {'__type__': 'faddist.rx.operators.TransformBuilder',
-                                                    'name': 'transform'}],
+                                                    'name': 'transform'},
+                                                   {'__type__': 'test_rx_operators.sample_transform_callable',
+                                                    'name': 'parse_date'}],
                                          'variables': [{'__type__': 'list', 'name': 'test'},
                                                        {'__type__': 'int', 'name': 'start', 'arguments': '10'},
                                                        {'__type__': 'int', 'name': 'stop', 'arguments': '20'}],
@@ -67,7 +82,11 @@ def test_rx_transform():
                                              {'__alias__': 'transform',
                                               'arguments': [{
                                                   'origin': 'x',
-                                                  'date': '$lambda x: DateTime.strptime(x["a"], "%Y-%m-%d").date()'
+                                                  'date': '$lambda x: DateTime.strptime(x["a"], "%Y-%m-%d").date()',
+                                                  'other': {
+                                                      '__alias__': 'parse_date',
+                                                      'arguments': ['a', ['%m/%d%/%Y', '%Y-%m-%d']]
+                                                  }
                                               }]}
                                          ],
                                          'observer': '$lambda x: test.append(x)'})
@@ -82,11 +101,15 @@ def test_rx_transform():
     entry = data[0]
     assert 'date' in entry
     assert entry['date'] == datetime.date(2021, 5, 10)
+    assert 'other' in entry
+    assert entry['other'] == datetime.date(2021, 5, 10)
     assert 'origin' in entry
     assert entry['origin'] == 10
 
     entry = data[9]
     assert 'date' in entry
     assert entry['date'] == datetime.date(2021, 5, 19)
+    assert 'other' in entry
+    assert entry['other'] == datetime.date(2021, 5, 19)
     assert 'origin' in entry
     assert entry['origin'] == 19
