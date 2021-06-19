@@ -3,8 +3,8 @@ from csv import DictReader
 from typing import Iterable, Iterator
 
 
-class CsvIterator(Iterable[dict], Iterator[dict]):
-    def __init__(self, file_path: str, dialect_name: str):
+class CsvIterator(Iterator):
+    def __init__(self, file_path: str, dialect_name: str = None):
         if dialect_name:
             dialect = get_dialect(dialect_name)
         else:
