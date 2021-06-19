@@ -81,6 +81,10 @@ print(data)
       "name": "DateTime"
     },
     {
+      "name": "db_reader",
+      "__type__": "faddist.iterators.DatabaseIterator"
+    },
+    {
       "__type__": "faddist.rx.operators.TransformBuilder",
       "name": "transform"
     },

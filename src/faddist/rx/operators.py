@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from collections import Callable
 from typing import Any
 
