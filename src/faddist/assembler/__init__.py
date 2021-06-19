@@ -4,7 +4,7 @@ import traceback
 from abc import abstractmethod, ABC
 from collections import Iterator, Iterable
 from logging import Logger
-from typing import Union, Any, Callable
+from typing import Union, Any, Callable, Optional
 
 from rx import Observable, from_, catch
 from rx.core.abc import Observer
@@ -118,13 +118,16 @@ class Assembler(object):
                 name = descriptor['name']
                 self.__variables[name] = self.instance_from_descriptor(descriptor)
 
-    def __bootstrap_include(self, path: str):
-        if os.path.isabs(path):
-            include_path = path
-        else:
-            include_path = os.path.join(self.__working_dir, path)
-        with open(include_path, 'r') as fd:
-            self.bootstrap(json.load(fd))
+    def __bootstrap_include(self, path: Optional[list, str]):
+        if isinstance(path, str):
+            path = [path]
+        for p in path:
+            if os.path.isabs(p):
+                include_path = p
+            else:
+                include_path = os.path.join(self.__working_dir, p)
+            with open(include_path, 'r') as fd:
+                self.bootstrap(json.load(fd))
 
     def instance_from_descriptor(self, descriptor: dict) -> Any:
         if isinstance(descriptor, str) and descriptor.startswith('$lambda'):
