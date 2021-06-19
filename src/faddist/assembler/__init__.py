@@ -4,7 +4,7 @@ import traceback
 from abc import abstractmethod, ABC
 from collections import Iterator, Iterable
 from logging import Logger
-from typing import Union, Any, Callable, Optional
+from typing import Union, Any, Callable
 
 from rx import Observable, from_, catch
 from rx.core.abc import Observer
@@ -118,7 +118,7 @@ class Assembler(object):
                 name = descriptor['name']
                 self.__variables[name] = self.instance_from_descriptor(descriptor)
 
-    def __bootstrap_include(self, path: Optional[list, str]):
+    def __bootstrap_include(self, path: Union[list, str]):
         if isinstance(path, str):
             path = [path]
         for p in path:
