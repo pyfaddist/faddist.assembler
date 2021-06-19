@@ -1,11 +1,12 @@
 import json
 import os
-from abc import abstractmethod
+import traceback
+from abc import abstractmethod, ABC
 from collections import Iterator, Iterable
 from logging import Logger
 from typing import Union, Any, Callable
 
-from rx import Observable, from_
+from rx import Observable, from_, catch
 from rx.core.abc import Observer
 
 from faddist.reflection import load_class, create_instance
@@ -31,10 +32,12 @@ class Pipeline(object):
         self.__ducts.append(duct)
 
     def operate(self, callable_: Callable[[Any], Any] = None):
+        def on_error(error):
+            traceback.print_exc()
         observable: Observable = from_(self.__iterator).pipe(*self.__ducts)
         if isinstance(self.__observer, InitializingObserver):
             self.__observer.initialize(self)
-        observable.subscribe(self.__observer)
+        observable.subscribe(self.__observer, on_error=on_error)
         if callable_ is not None:
             observable.subscribe(callable_)
 
@@ -91,7 +94,10 @@ class Assembler(object):
         return []
 
     def __create_lambda(self, value: str):
-        return eval(value[1:], self.__variables)
+        scope = {}
+        scope.update(self.__variables)
+        scope.update(self.__named_classes)
+        return eval(value[1:], scope)
 
     def __bootstrap_alias(self, definitions: list[dict]):
         if isinstance(definitions, (Iterable, Iterator, list, tuple)):
@@ -104,7 +110,23 @@ class Assembler(object):
                 type_ = descriptor['__type__']
                 self.__named_classes[name] = load_class(type_)
 
-    def __instance_from_descriptor(self, descriptor: dict) -> Any:
+    def __bootstrapp_variables(self, definitions: list[dict]):
+        if isinstance(definitions, (Iterable, Iterator, list, tuple)):
+            for descriptor in definitions:
+                if 'name' not in descriptor:
+                    raise ResourceWarning('A variable descriptor needs a name definition.')
+                name = descriptor['name']
+                self.__variables[name] = self.instance_from_descriptor(descriptor)
+
+    def __bootstrap_include(self, path: str):
+        if os.path.isabs(path):
+            include_path = path
+        else:
+            include_path = os.path.join(self.__working_dir, path)
+        with open(include_path, 'r') as fd:
+            self.bootstrap(json.load(fd))
+
+    def instance_from_descriptor(self, descriptor: dict) -> Any:
         if isinstance(descriptor, str) and descriptor.startswith('$lambda'):
             return self.__create_lambda(descriptor)
         if '__type__' not in descriptor and '__alias__' not in descriptor:
@@ -119,22 +141,6 @@ class Assembler(object):
         else:
             raise ResourceWarning('An instance descriptor needs a __type__ or __alias__ definition.')
         return create_instance(clazz, arguments)
-
-    def __bootstrapp_variables(self, definitions: list[dict]):
-        if isinstance(definitions, (Iterable, Iterator, list, tuple)):
-            for descriptor in definitions:
-                if 'name' not in descriptor:
-                    raise ResourceWarning('A variable descriptor needs a name definition.')
-                name = descriptor['name']
-                self.__variables[name] = self.__instance_from_descriptor(descriptor)
-
-    def __bootstrap_include(self, path: str):
-        if os.path.isabs(path):
-            include_path = path
-        else:
-            include_path = os.path.join(self.__working_dir, path)
-        with open(include_path, 'r') as fd:
-            self.bootstrap(json.load(fd))
 
     def bootstrap(self, definitions: dict):
         if 'include' in definitions:
@@ -164,14 +170,34 @@ class Assembler(object):
         self.bootstrap(definitions)
         if 'iterator' not in definitions:
             raise ResourceWarning('A variable descriptor needs a name definition.')
-        iterator = self.__instance_from_descriptor(definitions['iterator'])
+        iterator = self.instance_from_descriptor(definitions['iterator'])
         observer = None
         if 'observer' in definitions:
-            observer = self.__instance_from_descriptor(definitions['observer'])
+            observer = self.instance_from_descriptor(definitions['observer'])
         pipeline = Pipeline(iterator, observer)
         if 'pipe' in definitions:
             pipe_definitions = definitions['pipe']
             for operator_descriptor in pipe_definitions:
-                operator = self.__instance_from_descriptor(operator_descriptor)
+                operator = self.instance_from_descriptor(operator_descriptor)
+                if isinstance(operator, OperatorBuilder):
+                    operator.assembler = self
+                    operator = operator.build()
                 pipeline.append(operator)
         return pipeline
+
+
+class OperatorBuilder(ABC):
+    def __init__(self):
+        self.__assembler = None
+
+    @property
+    def assembler(self):
+        return self.__assembler
+
+    @assembler.setter
+    def assembler(self, assembler: Assembler):
+        self.__assembler = assembler
+
+    @abstractmethod
+    def build(self) -> Callable[[Observable], Observable]:
+        pass

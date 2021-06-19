@@ -1,4 +1,5 @@
 import builtins
+import traceback
 from importlib import import_module
 from typing import Union
 
@@ -23,5 +24,8 @@ def create_instance(clazz, arguments: Union[dict, list]):
     if isinstance(arguments, dict):
         return clazz(**arguments)
     elif isinstance(arguments, list):
-        return clazz(*arguments)
+        try:
+            return clazz(*arguments)
+        except TypeError:
+            traceback.print_exc()
     return clazz()

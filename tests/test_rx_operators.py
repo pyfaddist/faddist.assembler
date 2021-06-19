@@ -1,5 +1,8 @@
+import datetime
+
 from rx import from_
 
+from faddist.assembler import Assembler
 from faddist.rx.operators import buffer_while
 
 
@@ -45,3 +48,36 @@ def test_buffer_while():
         buffer_while(buffering_condition())
     )
     source.subscribe(assert_subscription)
+
+
+def test_rx_transform():
+    assembler = Assembler()
+
+    pipeline = assembler.build_pipeline({'alias': [{'__type__': 'datetime.date', 'name': 'Date'},
+                                                   {'__type__': 'datetime.datetime', 'name': 'DateTime'}],
+                                         'variables': [{'__type__': 'list', 'name': 'test'},
+                                                       {'__type__': 'int', 'name': 'start', 'arguments': '10'},
+                                                       {'__type__': 'int', 'name': 'stop', 'arguments': '20'}],
+                                         'iterator': {'__type__': 'range', 'arguments': ['$var:start', '$var:stop']},
+                                         'pipe': [
+                                             {'__type__': 'rx.operators.map',
+                                              'arguments': ['$lambda x: {"a": "2021-05-" + str(x), "x": x}']},
+                                             {'__type__': 'faddist.rx.operators.TransformBuilder',
+                                              'arguments': [{
+                                                  'origin': 'x',
+                                                  'date': '$lambda x: DateTime.strptime(x["a"], "%Y-%m-%d").date()'
+                                              }]}
+                                         ],
+                                         'observer': '$lambda x: test.append(x)'})
+    assert pipeline is not None
+    assert assembler.has_variable('test')
+
+    pipeline.operate()
+
+    data = assembler.get_variable('test')
+    assert len(data) == 10
+    entry = data[0]
+    assert 'date' in entry
+    assert entry['date'] == datetime.date(2021, 5, 10)
+    assert 'origin' in entry
+    assert entry['origin'] == 10
