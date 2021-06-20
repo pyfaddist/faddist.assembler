@@ -74,26 +74,39 @@ class Assembler(object):
         self.__named_classes = {}
         self.__variables = {"working_dir": working_dir}
 
+    def __prepare_value(self, value: Any):
+        if isinstance(value, str) and value.startswith('$var:'):
+            variable_name = value[5:]
+            return self.get_variable(variable_name)
+        elif isinstance(value, str) and value.startswith('$lambda'):
+            try:
+                script = self.__create_lambda(value)
+            except Exception:
+                raise SyntaxWarning(f"Check the code of the descriptor '{json.dumps(descriptor)}'.")
+            return script
+        return value
+
+    def __resolve_argument_from_list(self, arguments: Union[Iterable, Iterator, list, tuple]):
+        result = []
+        for value in arguments:
+            result.append(self.__prepare_value(value))
+        return result
+
+    def __resolve_argument_from_dict(self, arguments: dict):
+        result = {}
+        for key, value in arguments.items():
+            result[key] = self.__prepare_value(value)
+        return result
+
     def __resolve_arguments(self, descriptor: dict):
         if 'arguments' in descriptor:
             arguments = descriptor['arguments']
-            result = []
             if isinstance(arguments, str):
                 arguments = [arguments]
-            if isinstance(arguments, (Iterable, Iterator, list, tuple)):
-                for value in arguments:
-                    if isinstance(value, str) and value.startswith('$var:'):
-                        variable_name = value[5:]
-                        result.append(self.get_variable(variable_name))
-                    elif isinstance(value, str) and value.startswith('$lambda'):
-                        try:
-                            script = self.__create_lambda(value)
-                        except Exception:
-                            raise SyntaxWarning(f"Check the code of the descriptor '{json.dumps(descriptor)}'.")
-                        result.append(script)
-                    else:
-                        result.append(value)
-            return result
+            if isinstance(arguments, (Iterator, list, tuple)):
+                return self.__resolve_argument_from_list(arguments)
+            elif isinstance(arguments, dict):
+                return self.__resolve_argument_from_dict(arguments)
         return []
 
     def __create_lambda(self, value: str):

@@ -22,21 +22,30 @@
     },
     {
       "__alias__": "select_first",
-      "arguments": [
-        "$var:engine",
-        "EmployeeID",
-        "Employee",
-        "Employees"
-      ]
+      "arguments": {
+        "engine": "$var:engine",
+        "source": "EmployeeID",
+        "target": "Employee",
+        "table_name": "Employees"
+      }
     },
     {
       "__alias__": "select_first",
-      "arguments": [
-        "$var:engine",
-        "Employee.ReportsTo",
-        "Employee.ReportsTo",
-        "Employees"
-      ]
+      "arguments": {
+        "engine": "$var:engine",
+        "source": "Employee.ReportsTo",
+        "target": "Employee.ReportsTo",
+        "table_name": "Employees"
+      }
+    },
+    {
+      "__alias__": "select_all",
+      "arguments": {
+        "engine": "$var:engine",
+        "source": "OrderID",
+        "target": "Details",
+        "table_name": "Order Details"
+      }
     }
   ],
   "observer": "$lambda x: bucket.append(x)"
