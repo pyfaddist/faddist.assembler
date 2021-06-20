@@ -64,7 +64,7 @@ def sample_transform_callable(source: str, formats: list[str], default: Any = No
     return convert
 
 
-def test_rx_transform():
+def test_transform():
     assembler = Assembler()
 
     pipeline = assembler.build_pipeline({'alias': [{'__type__': 'datetime.date', 'name': 'Date'},
@@ -116,7 +116,7 @@ def test_rx_transform():
     assert entry['origin'] == 19
 
 
-def test_resolve_single_northwind(northwind: Engine, db_path: str):
+def test_select_single_northwind(northwind: Engine, db_path: str):
     assembler = Assembler()
     pipeline = assembler.build_pipeline({'alias': [{'__type__': 'faddist.sqlalchemy.rx.operators.select_first',
                                                     'name': 'select_first'},
@@ -159,7 +159,7 @@ def test_resolve_single_northwind(northwind: Engine, db_path: str):
     assert entry_count == 830
 
 
-def test_resolve_all_northwind(northwind: Engine, db_path: str):
+def test_select_all_northwind(northwind: Engine, db_path: str):
     assembler = Assembler()
     pipeline = assembler.build_pipeline({'alias': [{'__type__': 'faddist.sqlalchemy.rx.operators.select_first',
                                                     'name': 'select_first'},

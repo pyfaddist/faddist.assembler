@@ -1,4 +1,8 @@
+from sqlalchemy.engine import Engine
+
 from faddist.assembler import Assembler
+from faddist.sqlalchemy.rx.operators import get_current_session
+from utils import absolute_path_to
 
 
 def test_assembler_bootstrap():
@@ -48,3 +52,14 @@ def test_assembler_create_pipeline():
     assert len(data) == 10
     assert data[0] == 20
     assert data[9] == 38
+
+
+def test_read_file_like_object(northwind: Engine):
+    assembler = Assembler(working_dir=absolute_path_to('samples'))
+    assembler.set_variable('engine', northwind)
+
+    pipeline = assembler.load_json_file('pipe.complex.json')
+    pipeline.operate()
+
+    bucket = assembler.get_variable('bucket')
+    assert len(bucket) == 830

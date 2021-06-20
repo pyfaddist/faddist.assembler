@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "d83084f1d90cf46e22403c4922171839647c9faf3b047b2cb725212164ce20e9"
+            "sha256": "b3ac9be7e9f7a1f1fa39b84b591ecfa52d68a4fd687aa17d5bb190b861f530d2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,6 +16,13 @@
         ]
     },
     "default": {
+        "commentjson": {
+            "hashes": [
+                "sha256:42f9f231d97d93aff3286a4dc0de39bfd91ae823d1d9eba9fa901fe0c7113dd4"
+            ],
+            "index": "pypi",
+            "version": "==0.9.0"
+        },
         "greenlet": {
             "hashes": [
                 "sha256:03f28a5ea20201e70ab70518d151116ce939b412961c33827519ce620957d44c",
@@ -70,6 +77,12 @@
             ],
             "markers": "python_version >= '3'",
             "version": "==1.1.0"
+        },
+        "lark-parser": {
+            "hashes": [
+                "sha256:26215ebb157e6fb2ee74319aa4445b9f3b7e456e26be215ce19fdaaa901c20a4"
+            ],
+            "version": "==0.7.8"
         },
         "pydash": {
             "hashes": [

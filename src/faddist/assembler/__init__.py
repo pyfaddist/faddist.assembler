@@ -7,6 +7,7 @@ from collections import Iterator, Iterable
 from logging import Logger
 from typing import Union, Any, Callable
 
+from commentjson import commentjson
 from rx import Observable, from_
 from rx.core.abc import Observer
 
@@ -71,7 +72,7 @@ class Assembler(object):
     def __init__(self, working_dir: str = os.path.abspath(os.getcwd())):
         self.__working_dir = working_dir
         self.__named_classes = {}
-        self.__variables = {}
+        self.__variables = {"working_dir": working_dir}
 
     def __resolve_arguments(self, descriptor: dict):
         if 'arguments' in descriptor:
@@ -87,7 +88,7 @@ class Assembler(object):
                     elif isinstance(value, str) and value.startswith('$lambda'):
                         try:
                             script = self.__create_lambda(value)
-                        except:
+                        except Exception:
                             raise SyntaxWarning(f"Check the code of the descriptor '{json.dumps(descriptor)}'.")
                         result.append(script)
                     else:
@@ -104,7 +105,7 @@ class Assembler(object):
         def isolation(data: Any) -> Any:
             try:
                 return compiled(data)
-            except:
+            except Exception:
                 logging.critical(f"Failed executing lamda function '{value}' with input data {repr(data)}.",
                                  exc_info=True)
                 raise
@@ -181,6 +182,11 @@ class Assembler(object):
     def get_variable(self, name: str):
         return self.__variables[name]
 
+    def set_variable(self, name: str, value: Any, force: bool = False):
+        if self.has_variable(name) and not force:
+            raise ValueError(f"Variable '{name}' is already set. Yoe can use the 'force' argument to override.")
+        self.__variables[name] = value
+
     def build_pipeline(self, definitions: dict) -> Pipeline:
         self.bootstrap(definitions)
         if 'iterator' not in definitions:
@@ -199,6 +205,16 @@ class Assembler(object):
                     operator = operator.build()
                 pipeline.append(operator)
         return pipeline
+
+    def load_json_file(self, file_path, **kwargs):
+        if not os.path.isabs(file_path):
+            file_path = os.path.join(self.__working_dir, file_path)
+        with open(file_path, 'r') as fp:
+            return self.load_json(fp, **kwargs)
+
+    def load_json(self, fp, **kwargs):
+        pipeline_configuration = commentjson.load(fp, **kwargs)
+        return self.build_pipeline(pipeline_configuration)
 
 
 class OperatorBuilder(ABC):

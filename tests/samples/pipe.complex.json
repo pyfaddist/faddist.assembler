@@ -1,34 +1,43 @@
 {
-  "alias": [
-    {
-      "name": "db_reader",
-      "__type__": "faddist.iterators.DatabaseIterator"
-    },
-    {
-      "name": "map",
-      "__type__": "rx.operators.map"
-    }
+  "include": [
+    "./definitions.json"
   ],
   "variables": [
     {
       "name": "bucket",
       "__type__": "list"
-    },
-    {
-      "name": "engine",
-      "__type__": "sqlalchemy.create_engine",
-      "arguments": "sqlite:///test.db"
     }
   ],
   "iterator": {
     "__alias__": "db_reader",
     "arguments": [
       "$var:engine",
-      "SELECT * FROM test"
+      "SELECT * FROM Orders"
     ]
   },
   "pipe": [
-    {}
+    {
+      "__alias__": "session",
+      "arguments": "$var:engine"
+    },
+    {
+      "__alias__": "select_first",
+      "arguments": [
+        "$var:engine",
+        "EmployeeID",
+        "Employee",
+        "Employees"
+      ]
+    },
+    {
+      "__alias__": "select_first",
+      "arguments": [
+        "$var:engine",
+        "Employee.ReportsTo",
+        "Employee.ReportsTo",
+        "Employees"
+      ]
+    }
   ],
   "observer": "$lambda x: bucket.append(x)"
 }

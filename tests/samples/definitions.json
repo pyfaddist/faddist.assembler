@@ -1,0 +1,26 @@
+{
+  "alias": [
+    {
+      "name": "select_first",
+      "__type__": "faddist.sqlalchemy.rx.operators.select_first"
+    },
+    {
+      "name": "select_all",
+      "__type__": "faddist.sqlalchemy.rx.operators.select_all"
+    },
+    {
+      "name": "db_reader",
+      "__type__": "faddist.iterators.DatabaseReader"
+    },
+    {
+      "name": "session",
+      "__type__": "faddist.sqlalchemy.rx.operators.session"
+    },
+    {
+      "name": "map",
+      "__type__": "rx.operators.map"
+    }
+  ],
+  "variables": [
+  ]
+}
