@@ -2,6 +2,7 @@ import datetime
 from typing import Callable, Any
 
 from rx import from_
+from sqlalchemy.engine import Engine
 
 from faddist.assembler import Assembler
 from faddist.rx.operators import buffer_while
@@ -113,3 +114,85 @@ def test_rx_transform():
     assert entry['other'] == datetime.date(2021, 5, 19)
     assert 'origin' in entry
     assert entry['origin'] == 19
+
+
+def test_resolve_single_northwind(northwind: Engine, db_path: str):
+    assembler = Assembler()
+    pipeline = assembler.build_pipeline({'alias': [{'__type__': 'faddist.sqlalchemy.rx.operators.select_first',
+                                                    'name': 'select_first'},
+                                                   {'__type__': 'faddist.sqlalchemy.rx.operators.select_all',
+                                                    'name': 'select_all'},
+                                                   {"__type__": "faddist.iterators.DatabaseReader",
+                                                    "name": "db_reader", }],
+                                         'variables': [{'__type__': 'list', 'name': 'test'},
+                                                       {"__type__": "sqlalchemy.create_engine",
+                                                        "name": "engine",
+                                                        "arguments": f"sqlite:///{db_path}"}],
+                                         'iterator': {
+                                             "__alias__": "db_reader",
+                                             "arguments": [
+                                                 "$var:engine",
+                                                 "SELECT * FROM Orders"
+                                             ]
+                                         },
+                                         'pipe': [
+                                             {"__alias__": "select_first",
+                                              #              engine         source        target      table_name
+                                              "arguments": ["$var:engine", "EmployeeID", "Employee", "Employees"]},
+                                             {"__alias__": "select_first",
+                                              #              engine         source                target
+                                              "arguments": ["$var:engine", "Employee.ReportsTo", "Employee.ReportsTo",
+                                                            # table_name
+                                                            "Employees"]},
+                                         ],
+                                         'observer': '$lambda x: test.append(x)'})
+    pipeline.operate()
+    data = assembler.get_variable('test')
+    assert len(data) == 830
+
+    entry_count = 0
+    for entry in data:
+        assert 'EmployeeID' in entry
+        assert 'Employee' in entry
+        assert entry['EmployeeID'] == entry['Employee']['EmployeeID']
+        entry_count += 1
+    assert entry_count == 830
+
+
+def test_resolve_all_northwind(northwind: Engine, db_path: str):
+    assembler = Assembler()
+    pipeline = assembler.build_pipeline({'alias': [{'__type__': 'faddist.sqlalchemy.rx.operators.select_first',
+                                                    'name': 'select_first'},
+                                                   {'__type__': 'faddist.sqlalchemy.rx.operators.select_all',
+                                                    'name': 'select_all'},
+                                                   {"__type__": "faddist.iterators.DatabaseReader",
+                                                    "name": "db_reader", }],
+                                         'variables': [{'__type__': 'list', 'name': 'test'},
+                                                       {"__type__": "sqlalchemy.create_engine",
+                                                        "name": "engine",
+                                                        "arguments": f"sqlite:///{db_path}"}],
+                                         'iterator': {
+                                             "__alias__": "db_reader",
+                                             "arguments": [
+                                                 "$var:engine",
+                                                 "SELECT * FROM Orders"
+                                             ]
+                                         },
+                                         'pipe': [
+                                             {"__alias__": "select_all",
+                                              #              engine         source     target     table_name
+                                              "arguments": ["$var:engine", "OrderID", "Details", "Order Details"]}
+                                         ],
+                                         'observer': '$lambda x: test.append(x)'})
+    pipeline.operate()
+    data = assembler.get_variable('test')
+    assert len(data) == 830
+
+    entry_count = 0
+    for entry in data:
+        assert 'OrderID' in entry
+        assert 'Details' in entry
+        for detail in entry['Details']:
+            assert detail['OrderID'] == entry['OrderID']
+        entry_count += 1
+    assert entry_count == 830

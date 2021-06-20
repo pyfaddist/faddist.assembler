@@ -3,4 +3,4 @@ __all__ = [
 ]
 
 # noinspection PyPep8Naming
-from .subscribe import SubscribeDecorator as subscribe
+from .subscribe import subscribe
